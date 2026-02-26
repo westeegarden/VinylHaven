@@ -1,0 +1,3 @@
+[submodule "VinylHaven/modules/JUCE"]
+	path = VinylHaven/modules/JUCE
+	url = https://github.com/juce-framework/JUCE.git
