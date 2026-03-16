@@ -1,112 +1,100 @@
-cmake_minimum_required(VERSION 3.23.1)
+cmake_minimum_required(VERSION 3.22)
 
-set(PROJECT_NAME "VinylHaven")
-set(CURRENT_VERSION "0.0.1")
-set(PRODUCT_NAME "VinylHaven")
-set(COMPANY_NAME "CS3993")
-set(BUNDLE_ID "com.CS3993.VinylHaven")
-set(FORMATS Standalone AU VST3)
+set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "Minimum OS X deployment target")
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
-project(VinylHaven VERSION 0.0.1)
+project(Sampler VERSION 1.0.0)
 
-add_subdirectory(modules/JUCE)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(CMAKE_CXX_STANDARD 17)
+set_property(GLOBAL PROPERTY USE_FOLDERS YES)
+option(JUCE_ENABLE_MODULE_SOURCE_GROUPS "Enable Module Source Groups" ON)
 
-# Disable all warnings
-add_definitions(-w)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_STANDARD 20)
 
-# Append custom module path
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/modules/cmake-include/sadura-cmake")
+# generate PDB/dSYM files for the Release build
+if(MSVC)
+    add_compile_options("$<$<NOT:$<CONFIG:Debug>>:/Zi>")
+    add_link_options("$<$<NOT:$<CONFIG:Debug>>:/DEBUG>")
+    add_link_options("$<$<NOT:$<CONFIG:Debug>>:/OPT:REF>")
+    add_link_options("$<$<NOT:$<CONFIG:Debug>>:/OPT:ICF>")
+else()
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -g")
+    set(CMAKE_XCODE_ATTRIBUTE_GCC_GENERATE_DEBUGGING_SYMBOLS[variant=Release] "YES")
+    set(CMAKE_XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT[variant=Release] "dwarf-with-dsym")
+    set(CMAKE_XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING[variant=Release] "YES")
+endif()
 
-# Define the plugin
-juce_add_plugin("${PROJECT_NAME}"
-        COMPANY_NAME "${COMPANY_NAME}"
-        BUNDLE_ID "${BUNDLE_ID}"
-        COPY_PLUGIN_AFTER_BUILD FALSE
-        PLUGIN_MANUFACTURER_CODE CS39
-        PLUGIN_CODE 5beq
-        FORMATS ${FORMATS}
-        PRODUCT_NAME "${PRODUCT_NAME}"
-        NEEDS_MIDI_INPUT FALSE
-        NEEDS_MIDI_OUTPUT FALSE
-        IS_MIDI_EFFECT FALSE
-        IS_SYNTH FALSE
+# We're going to use CPM as our package manager to bring in JUCE
+# Check to see if we have CPM installed already.  Bring it in if we don't.
+set(CPM_DOWNLOAD_VERSION 0.34.0)
+set(CPM_DOWNLOAD_LOCATION "${CMAKE_BINARY_DIR}/cmake/CPM_${CPM_DOWNLOAD_VERSION}.cmake")
+
+if (NOT EXISTS ${CPM_DOWNLOAD_LOCATION})
+    message(STATUS "Downloading CPM.cmake to ${CPM_DOWNLOAD_LOCATION}")
+    file(DOWNLOAD https://github.com/cpm-cmake/CPM.cmake/releases/download/v${CPM_DOWNLOAD_VERSION}/CPM.cmake ${CPM_DOWNLOAD_LOCATION})
+endif ()
+
+include(${CPM_DOWNLOAD_LOCATION})
+
+CPMAddPackage(NAME JUCE
+    GITHUB_REPOSITORY juce-framework/JUCE
+    GIT_TAG 8.0.8
 )
 
-add_compile_definitions(JUCE_PROJECT_NAME="${PROJECT_NAME}")
-
-# Define SharedCode as an INTERFACE library
-add_library(SharedCode INTERFACE)
-
-# Set compile features for sharedcode
-target_compile_features(SharedCode INTERFACE cxx_std_20)
-
-# Include directories and compile definitions for SharedCode
-target_include_directories(SharedCode INTERFACE
-        "${CMAKE_CURRENT_SOURCE_DIR}/Source"
-        "${CMAKE_CURRENT_SOURCE_DIR}/modules/JUCE/modules"
-        "${SMAKE_BINARY_DIR}/AudioPluginData"
+juce_add_plugin(${PROJECT_NAME}
+    COMPANY_NAME "The Audio Programmer"
+    PLUGIN_MANUFACTURER_CODE Tap1
+    PLUGIN_CODE Smpl
+    BUNDLE_ID "org.theaudioprogrammer.sampler"
+    IS_SYNTH TRUE
+    NEEDS_MIDI_INPUT TRUE
+    NEEDS_MIDI_OUTPUT FALSE
+    IS_MIDI_EFFECT FALSE
+    EDITOR_WANTS_KEYBOARD_FOCUS FALSE
+    COPY_PLUGIN_AFTER_BUILD TRUE
+    FORMATS AU VST3 Standalone
+    PRODUCT_NAME "Sampler"
 )
 
-# set JUCE flags for SharedCode
-target_compile_definitions(SharedCode INTERFACE
-        JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1
-        JUCE_WEB_BROWSER=1
-        JUCE_USE_CURL=0
-        JUCE_VST3_CAN_REPLACE_VST2=0
-        CMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE}"
-        VERSION="${CURRENT_VERSION}"
-        JUCE_DISPLAY_SPLASH_SCREEN=0
-        PRODUCT_NAME_WITHOUT_VERSION="5-Band-EQ"
+target_sources(${PROJECT_NAME} PRIVATE
+        sources/PluginEditor.cpp
+        sources/PluginEditor.h
+        sources/PluginProcessor.cpp
+        sources/PluginProcessor.h
 )
 
-# Add sources to the main project
-file(GLOB_RECURSE SourceFiles CONFIGURE_DEPENDS
-        "${CMAKE_CURRENT_SOURCE_DIR}/Source/*.cpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/Source/*.h"
+juce_generate_juce_header(${PROJECT_NAME})
+
+juce_add_binary_data(BinaryData SOURCES
+    sounds/c5.wav
+    sounds/d5.wav
+    sounds/e5.wav
+    sounds/f5.wav
+    sounds/g5.wav
+    sounds/a5.wav
+    sounds/b5.wav
+    sounds/c6.wav
 )
 
-# Sources to main project
-target_sources("${PROJECT_NAME}" PRIVATE ${SourceFiles})
+target_compile_definitions(${PROJECT_NAME} PUBLIC
+    JUCE_WEB_BROWSER=0
+    JUCE_USE_CURL=0
+    JUCE_VST3_CAN_REPLACE_VST2=0
+    JUCE_REPORT_APP_USAGE=0
+    JUCE_MODAL_LOOPS_PERMITTED=0
+    DONT_SET_USING_JUCE_NAMESPACE=1
+)
 
-# Assets setup
-#file(GLOB_RECURSE Assets "${CMAKE_CURRENT_SOURCE_DIR}/assets/*.*")
-
-# Add the Assets Binary data as a target
-#juce_add_binary_data(AudioPluginData SOURCES ${Assets})
-
-# Link AudioPluginData to SharedCode
-#target_link_libraries(SharedCode INTERFACE AudioPluginData)
-
-# Ensure AudioPluginData is built before the main project
-#add_dependencies(${PROJECT_NAME} AudioPluginData)
-
-# Link libraries to main project
-target_link_libraries("${PROJECT_NAME}" PRIVATE
-        SharedCode
-        #AudioPluginData
-        juce::juce_audio_basics
-        juce::juce_audio_devices
-        juce::juce_audio_formats
-        juce::juce_audio_plugin_client
-        juce::juce_audio_processors
+target_link_libraries(${PROJECT_NAME}
+    PRIVATE
+        BinaryData
+        juce::juce_animation
         juce::juce_audio_utils
-        juce::juce_core
-        juce::juce_data_structures
         juce::juce_dsp
-        juce::juce_events
-        juce::juce_graphics
-        juce::juce_gui_basics
-        juce::juce_gui_extra
-        juce::juce_product_unlocking
-        PUBLIC
+    PUBLIC
+        juce_recommended_warning_flags
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags
-        juce::juce_recommended_warning_flags
-)
-
-# Ensure the main project knows where its sources are
-target_include_directories("${PROJECT_NAME}" PRIVATE
-        "${CMAKE_CURRENT_SOURCE_DIR}/Source"
 )

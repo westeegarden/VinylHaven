@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/VinylHaven.iml" filepath="$PROJECT_DIR$/.idea/VinylHaven.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/JuceSamplerAudioPlugin-main.iml" filepath="$PROJECT_DIR$/.idea/JuceSamplerAudioPlugin-main.iml" />
     </modules>
   </component>
 </project>
