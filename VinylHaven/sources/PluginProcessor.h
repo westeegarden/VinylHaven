@@ -9,6 +9,7 @@ class SamplerAudioProcessor final : public juce::AudioProcessor
 {
 public:
     SamplerAudioProcessor();
+    ~SamplerAudioProcessor();
 
     bool hasEditor() const override { return true; }
     const juce::String getName() const override { return JucePlugin_Name; }
@@ -32,13 +33,24 @@ public:
 
     juce::AudioProcessorValueTreeState apvts;
 
+    void loadFile();
+
 private:
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
     void clearUnusedOutputChannels(juce::AudioBuffer<float>& buffer) const;
 
+    juce::SamplerSound* loadSound(const juce::String name,
+                                  int originalMidiNote,
+                                  const std::vector<int>& midiNoteSet,
+                                  const void* data,
+                                  size_t sizeInBytes);
+
+    std::unique_ptr<juce::FileChooser> chooser;
+
     juce::Synthesiser midiPlaybackEngine;
 
     juce::AudioFormatManager formatManager;
+    juce::AudioFormatReader* formatReader { nullptr };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SamplerAudioProcessor)
 };

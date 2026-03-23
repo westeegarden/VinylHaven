@@ -93,6 +93,7 @@ target_link_libraries(${PROJECT_NAME}
         juce::juce_animation
         juce::juce_audio_utils
         juce::juce_dsp
+        juce::juce_gui_basics
     PUBLIC
         juce_recommended_warning_flags
         juce::juce_recommended_config_flags

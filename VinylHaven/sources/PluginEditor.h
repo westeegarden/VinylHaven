@@ -13,6 +13,8 @@ public:
     void resized() override;
 
 private:
+    juce::TextButton LoadButton { "Load" };
+
     SamplerAudioProcessor& audioProcessor;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SamplerAudioProcessorEditor)

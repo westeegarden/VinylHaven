@@ -1,6 +1,30 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+juce::SamplerSound* SamplerAudioProcessor::loadSound(const juce::String name,
+                                  int originalMidiNote,
+                                  const std::vector<int>& midiNoteSet,
+                                  const void* data,
+                                  size_t sizeInBytes) {
+    auto inputStream = std::make_unique<juce::MemoryInputStream>(BinaryData::c5_wav, BinaryData::a5_wavSize, false);
+
+    if (auto reader = formatManager.createReaderFor(std::move(inputStream))) {
+
+        juce::BigInteger midiNotes;
+
+        for (auto note : midiNoteSet) {
+            midiNotes.setBit(note);
+        }
+
+        const double attack = 0.0;
+        const double release = 0.1;
+        const double sampleLength = 10.0;
+
+        // C5 sound
+        return new juce::SamplerSound(name, *reader, midiNotes, originalMidiNote, attack, release, sampleLength);
+    }
+}
+
 SamplerAudioProcessor::SamplerAudioProcessor() :
     AudioProcessor(BusesProperties().withOutput("Output", juce::AudioChannelSet::stereo(), true)),
     apvts(*this, nullptr, "Parameters", createParameterLayout())
@@ -10,18 +34,11 @@ SamplerAudioProcessor::SamplerAudioProcessor() :
     // Only 1 voice, so only 1 sample plays at a given moment
     midiPlaybackEngine.addVoice(new juce::SamplerVoice);
 
-    auto inputStream = std::make_unique<juce::MemoryInputStream>(BinaryData::c5_wav, BinaryData::a5_wavSize, false);
+    midiPlaybackEngine.addSound(loadSound("C5", 60, { 36 }, BinaryData::c5_wav, BinaryData::c5_wavSize));
+}
 
-    auto reader = formatManager.createReaderFor(std::move(inputStream));
-
-    int originalMidiNote = 60;
-    juce::BigInteger midiNote;
-    midiNote.setBit(60);
-
-    // C5 sound
-    auto sound = new juce::SamplerSound("C5", *reader, midiNote, originalMidiNote, 0.0, 0.1, 10.0);
-
-    midiPlaybackEngine.addSound(sound);
+SamplerAudioProcessor::~SamplerAudioProcessor() {
+    formatReader = nullptr;
 }
 
 bool SamplerAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const
@@ -65,6 +82,27 @@ void SamplerAudioProcessor::setStateInformation(const void* data, int sizeInByte
 juce::AudioProcessorEditor* SamplerAudioProcessor::createEditor()
 {
     return new SamplerAudioProcessorEditor(*this);
+}
+
+void SamplerAudioProcessor::loadFile() {
+    chooser = std::make_unique<juce::FileChooser>("Please load a file");
+
+    auto flags = juce::FileBrowserComponent::openMode |
+                 juce::FileBrowserComponent::canSelectFiles;
+
+    chooser->launchAsync(flags, [this](const juce::FileChooser& fc)
+    {
+        auto file = fc.getResult();
+
+        if (file.existsAsFile())
+        {
+            formatReader = formatManager.createReaderFor(file);
+        }
+        juce::BigInteger range;
+        range.setRange(0, 128, true);
+        midiPlaybackEngine.addSound(new juce::SamplerSound (
+            "Sample", *formatReader, range,60, 0.1, 0.1, 10));
+    });
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout SamplerAudioProcessor::createParameterLayout()
