@@ -1,29 +1,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
-juce::SamplerSound* SamplerAudioProcessor::loadSound(const juce::String name,
-                                  int originalMidiNote,
-                                  const std::vector<int>& midiNoteSet,
-                                  const void* data,
-                                  size_t sizeInBytes) {
-    auto inputStream = std::make_unique<juce::MemoryInputStream>(BinaryData::c5_wav, BinaryData::a5_wavSize, false);
-
-    if (auto reader = formatManager.createReaderFor(std::move(inputStream))) {
-
-        juce::BigInteger midiNotes;
-
-        for (auto note : midiNoteSet) {
-            midiNotes.setBit(note);
-        }
-
-        const double attack = 0.0;
-        const double release = 0.1;
-        const double sampleLength = 10.0;
-
-        // C5 sound
-        return new juce::SamplerSound(name, *reader, midiNotes, originalMidiNote, attack, release, sampleLength);
-    }
-}
 
 SamplerAudioProcessor::SamplerAudioProcessor() :
     AudioProcessor(BusesProperties().withOutput("Output", juce::AudioChannelSet::stereo(), true)),
@@ -33,8 +10,6 @@ SamplerAudioProcessor::SamplerAudioProcessor() :
 
     // Only 1 voice, so only 1 sample plays at a given moment
     midiPlaybackEngine.addVoice(new juce::SamplerVoice);
-
-    midiPlaybackEngine.addSound(loadSound("C5", 60, { 36 }, BinaryData::c5_wav, BinaryData::c5_wavSize));
 }
 
 SamplerAudioProcessor::~SamplerAudioProcessor() {
@@ -84,7 +59,8 @@ juce::AudioProcessorEditor* SamplerAudioProcessor::createEditor()
     return new SamplerAudioProcessorEditor(*this);
 }
 
-void SamplerAudioProcessor::loadFile() {
+void SamplerAudioProcessor::loadFile(std::function<void(juce::String)> callback) {
+    onLoaded = callback;
     chooser = std::make_unique<juce::FileChooser>("Please load a file");
 
     auto flags = juce::FileBrowserComponent::openMode |
@@ -97,11 +73,27 @@ void SamplerAudioProcessor::loadFile() {
         if (file.existsAsFile())
         {
             formatReader = formatManager.createReaderFor(file);
+
+            // build display string
+            long lengthInSeconds = formatReader->lengthInSamples / formatReader->sampleRate;
+            int minutes = static_cast<int>(lengthInSeconds / 60);
+            int seconds = static_cast<int>(lengthInSeconds % 60);
+
+            juce::String info = file.getFileNameWithoutExtension()
+                                + " | "
+                                + juce::String(minutes) + ":"
+                                + (seconds < 10 ? "0" : "")
+                                + juce::String(seconds);
+
+            juce::MessageManager::callAsync([this, info]() {
+                fileInfoString = info;
+                if (onLoaded) onLoaded(info);
+            });
         }
         juce::BigInteger range;
         range.setRange(0, 128, true);
         midiPlaybackEngine.addSound(new juce::SamplerSound (
-            "Sample", *formatReader, range,60, 0.1, 0.1, 10));
+            "Sample", *formatReader, range,60, 0.0, 0.1, 10));
     });
 }
 

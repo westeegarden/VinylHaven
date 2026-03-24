@@ -32,18 +32,15 @@ public:
     juce::AudioProcessorEditor* createEditor() override;
 
     juce::AudioProcessorValueTreeState apvts;
+    juce::String fileInfoString { "No file loaded" };
 
-    void loadFile();
+    void loadFile(std::function<void(juce::String)> callBack = nullptr);
 
 private:
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
     void clearUnusedOutputChannels(juce::AudioBuffer<float>& buffer) const;
 
-    juce::SamplerSound* loadSound(const juce::String name,
-                                  int originalMidiNote,
-                                  const std::vector<int>& midiNoteSet,
-                                  const void* data,
-                                  size_t sizeInBytes);
+    std::function<void(juce::String)> onLoaded;
 
     std::unique_ptr<juce::FileChooser> chooser;
 
