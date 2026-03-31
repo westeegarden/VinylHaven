@@ -44,7 +44,7 @@ CPMAddPackage(NAME JUCE
 )
 
 juce_add_plugin(${PROJECT_NAME}
-    COMPANY_NAME "The Audio Programmer"
+    COMPANY_NAME "CS3993"
     PLUGIN_MANUFACTURER_CODE Tap1
     PLUGIN_CODE Smpl
     BUNDLE_ID "org.theaudioprogrammer.sampler"
@@ -55,7 +55,7 @@ juce_add_plugin(${PROJECT_NAME}
     EDITOR_WANTS_KEYBOARD_FOCUS FALSE
     COPY_PLUGIN_AFTER_BUILD TRUE
     FORMATS AU VST3 Standalone
-    PRODUCT_NAME "Sampler"
+    PRODUCT_NAME "VinylHaven"
 )
 
 target_sources(${PROJECT_NAME} PRIVATE

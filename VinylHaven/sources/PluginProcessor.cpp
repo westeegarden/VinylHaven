@@ -100,6 +100,9 @@ void SamplerAudioProcessor::loadFile(std::function<void(juce::String)> callback)
 juce::AudioProcessorValueTreeState::ParameterLayout SamplerAudioProcessor::createParameterLayout()
 {
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
+    layout.add(std::make_unique<juce::AudioParameterFloat>("PITCH", "Pitch", PITCH_MIN, PITCH_MAX, PITCH_DEFAULT));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("LOCUT", "LoCut", LOCUT_MIN, LOCUT_MAX, LOCUT_DEFAULT));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("HICUT", "HiCut", HICUT_MIN, HICUT_MAX, HICUT_DEFAULT));
     return layout;
 }
 

@@ -5,6 +5,16 @@
 #include "juce_audio_basics/juce_audio_basics.h"
 #include "juce_audio_formats/juce_audio_formats.h"
 
+#define PITCH_MIN -24.0
+#define PITCH_MAX 24.0
+#define PITCH_DEFAULT 0.0
+#define LOCUT_MIN 0.0
+#define LOCUT_MAX 500.0
+#define LOCUT_DEFAULT 0.0
+#define HICUT_MIN 1000.0
+#define HICUT_MAX 20000.0
+#define HICUT_DEFAULT 20000.0
+
 class SamplerAudioProcessor final : public juce::AudioProcessor
 {
 public:
