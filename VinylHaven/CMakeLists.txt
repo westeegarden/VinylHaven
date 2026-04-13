@@ -92,6 +92,7 @@ target_link_libraries(${PROJECT_NAME}
         BinaryData
         juce::juce_animation
         juce::juce_audio_utils
+        juce::juce_audio_formats
         juce::juce_dsp
         juce::juce_gui_basics
     PUBLIC
