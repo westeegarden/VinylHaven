@@ -65,7 +65,7 @@ void SamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
     float crackleAmount = apvts.getRawParameterValue("CRACKLE")->load();
     if (crackleAmount > 0.0f)
     {
-        float gain = crackleAmount / (float)CRACKLE_MAX * 0.08f;  // max ~8% noise
+        float gain = crackleAmount / (float)CRACKLE_MAX * 0.08f;
         for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
         {
             auto* data = buffer.getWritePointer(ch);
@@ -78,7 +78,7 @@ void SamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
                 if (crackleRandom.nextFloat() > 0.9995f)
                     noise += (crackleRandom.nextFloat() * 2.0f - 1.0f) * 15.0f;
 
-                // Extra rare extra loud pops
+                // Extra rare, extra loud pops
                 if (crackleRandom.nextFloat() > 0.9999f)
                     noise += (crackleRandom.nextFloat() * 2.0f - 1.0f) * 20.0f;
 
@@ -170,12 +170,7 @@ void SamplerAudioProcessor::loadFile(std::function<void(juce::String)> callback)
                 if (onLoaded) onLoaded(info);
             });
         }
-        /*float pitchSemitones = apvts.getRawParameterValue ("PITCH")->load();
-        int rootNote = 60 - (int)std::round (pitchSemitones);
-        juce::BigInteger range;
-        range.setRange(60, 1, true);
-        midiPlaybackEngine.addSound(new juce::SamplerSound (
-            "Sample", *formatReader, range, rootNote, 0.0, 0.1, 10));*/
+
         rebuildPadSounds();
     });
 }
@@ -195,6 +190,7 @@ void SamplerAudioProcessor::rebuildPadSounds()
             range.setRange(midiNote, 1, true);
             int startSample = (int)(padTimestamps[i] * formatReader->sampleRate);
             int rootNote = 60 - (int)std::round (pitchSemitones) + i;
+
             auto reader = std::make_unique<juce::AudioSubsectionReader>(
                 formatReader, startSample, lengthInSamples, false);
 
@@ -204,18 +200,6 @@ void SamplerAudioProcessor::rebuildPadSounds()
             padReaders.push_back(std::move(reader));
     }
 }
-
-/*void SamplerAudioProcessor::getStateInformation(juce::MemoryBlock& destData)
-{
-    copyXmlToBinary(*apvts.copyState().createXml(), destData);
-}
-
-void SamplerAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
-{
-    std::unique_ptr<juce::XmlElement> xml(getXmlFromBinary(data, sizeInBytes));
-    if (xml.get() != nullptr && xml->hasTagName(apvts.state.getType()))
-        apvts.replaceState(juce::ValueTree::fromXml(*xml));
-}*/
 
 juce::AudioProcessorValueTreeState::ParameterLayout SamplerAudioProcessor::createParameterLayout()
 {
